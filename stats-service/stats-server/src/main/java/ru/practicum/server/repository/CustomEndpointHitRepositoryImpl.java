@@ -38,16 +38,16 @@ public class CustomEndpointHitRepositoryImpl implements CustomEndpointHitReposit
                 .reduce(BooleanExpression::and)
                 .get();
         NumberExpression<Long> uniqueIp = unique ? endpointHit.ip.countDistinct() : endpointHit.ip.count();
-        NumberPath<Long> asHits = Expressions.numberPath(Long.class, "hits");
+        NumberPath<Long> hits = Expressions.numberPath(Long.class, "hits");
         JPAQueryFactory queryFactory = new JPAQueryFactory(entityManager);
 
         JPAQuery<Stats> query = queryFactory
                 .select(Projections.bean(Stats.class,
-                        endpointHit.app, endpointHit.uri, uniqueIp.as(asHits)))
+                        endpointHit.app, endpointHit.uri, uniqueIp.as(hits)))
                 .from(endpointHit)
                 .where(finalCondition)
                 .groupBy(endpointHit.app, endpointHit.uri)
-                .orderBy(asHits.desc());
+                .orderBy(hits.desc());
         return query.fetch();
     }
 }
