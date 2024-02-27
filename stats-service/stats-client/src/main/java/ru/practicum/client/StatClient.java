@@ -1,6 +1,7 @@
 package ru.practicum.client;
 
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.lang.Nullable;
 import org.springframework.web.client.HttpStatusCodeException;
 import ru.practicum.exception.StatsException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class StatClient {
     public static final String DATE = "yyyy-MM-dd HH:mm:ss";
 
     @Autowired
-    public StatClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder restTemplateBuilder) {
+    public StatClient(@Value("http://localhost:9090") String serverUrl, RestTemplateBuilder restTemplateBuilder) {
         restTemplate = restTemplateBuilder
                 .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
                 .requestFactory(HttpComponentsClientHttpRequestFactory::new)
@@ -50,30 +51,30 @@ public class StatClient {
         return response.getBody();
     }
 
-    public List<StatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
+    public List<StatsDto> getStats(String start, String end, @Nullable List<String> uris, @Nullable Boolean unique) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         HttpEntity requestEntity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<StatsDto>> response;
-
         StringBuilder path = new StringBuilder();
         path.append("/stats?start={start}&end={end}");
         Map<String, Object> parameters = new HashMap<>();
 
-        parameters.put("start", start.format(DATE).toString());
-        parameters.put("end", end.format(DATE).toString());
+        parameters.put("start", start.format(DATE));
+        parameters.put("end", end.format(DATE));
 
         if (uris != null && !uris.isEmpty()) {
-            parameters.put("uris", uris.toArray());
+            parameters.put("uris", uris);
             path.append("&uris={uris}");
         }
 
         if (unique != null) {
-            parameters.put("unique", unique.toString());
+            parameters.put("unique", unique);
             path.append("&unique={unique}");
         }
+
+        ResponseEntity<List<StatsDto>> response;
 
         try {
             response = restTemplate.exchange(path.toString(), HttpMethod.GET, requestEntity,

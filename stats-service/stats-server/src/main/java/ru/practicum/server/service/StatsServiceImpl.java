@@ -26,8 +26,8 @@ public class StatsServiceImpl implements StatsService {
     @Transactional
     @Override
     public EndpointHitDto createEndpointHit(EndpointHitDto endpointHitDto) {
-        log.info("Создана сущность:{}", endpointHitDto.toString());
         EndpointHitDto response = mapper.toEndpointHitDto(repository.save(mapper.toEndpointHit(endpointHitDto)));
+        log.info("Создана сущность:{}", response.toString());
         return response;
     }
 
@@ -35,9 +35,9 @@ public class StatsServiceImpl implements StatsService {
     @Override
     public List<StatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
         if (end.isBefore(start)) {
-            throw new DateException("Конец не может быть после начала");
+            throw new DateException("Конец не может быть перед началом");
         }
-        log.info("Get stats from:{} to:{}", start, end);
+        log.info("Запрос статистики от:{} до:{}", start, end);
         return statsMapper.toListOfStatsDto(repository.getStats(start, end, uris, unique));
     }
 }

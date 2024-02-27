@@ -10,4 +10,6 @@ import java.util.List;
 public interface StatsMapper {
 
     List<StatsDto> toListOfStatsDto(List<Stats> stats);
+
+    StatsDto toStatsDto(Stats stats);
 }

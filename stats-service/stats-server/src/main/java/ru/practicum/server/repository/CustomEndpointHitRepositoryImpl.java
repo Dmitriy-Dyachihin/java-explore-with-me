@@ -7,24 +7,35 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaContext;
 import org.springframework.stereotype.Component;
+import ru.practicum.server.model.EndpointHit;
 import ru.practicum.server.model.QEndpointHit;
 import ru.practicum.server.model.Stats;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class CustomEndpointHitRepositoryImpl implements CustomEndpointHitRepository {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final JPAQueryFactory queryFactory;
+
+    @Autowired
+    public CustomEndpointHitRepositoryImpl(JpaContext context) {
+        EntityManager entityManager = context.getEntityManagerByManagedType(EndpointHit.class);
+        this.queryFactory = new JPAQueryFactory(entityManager);
+    }
 
     @Override
     public List<Stats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+
+        log.info("CustomEndpointHitRepositoryImpl getStats by start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
         QEndpointHit endpointHit = QEndpointHit.endpointHit;
         List<BooleanExpression> conditions = new ArrayList<>();
@@ -39,7 +50,6 @@ public class CustomEndpointHitRepositoryImpl implements CustomEndpointHitReposit
                 .get();
         NumberExpression<Long> uniqueIp = unique ? endpointHit.ip.countDistinct() : endpointHit.ip.count();
         NumberPath<Long> hits = Expressions.numberPath(Long.class, "hits");
-        JPAQueryFactory queryFactory = new JPAQueryFactory(entityManager);
 
         JPAQuery<Stats> query = queryFactory
                 .select(Projections.bean(Stats.class,
@@ -49,5 +59,6 @@ public class CustomEndpointHitRepositoryImpl implements CustomEndpointHitReposit
                 .groupBy(endpointHit.app, endpointHit.uri)
                 .orderBy(hits.desc());
         return query.fetch();
+
     }
 }
