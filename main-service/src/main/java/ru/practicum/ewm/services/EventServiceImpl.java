@@ -48,7 +48,6 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final EventMapper eventMapper;
     private final CategoryRepository categoryRepository;
-    private final StatClient statClient;
     private final EntityManager entityManager;
     private final String datePattern = "yyyy-MM-dd HH:mm:ss";
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(datePattern);
@@ -226,7 +225,7 @@ public class EventServiceImpl implements EventService {
         if (updateEventAdminRequest.getRequestModeration() != null) {
             event.setRequestModeration(updateEventAdminRequest.getRequestModeration());
         }
-        if (updateEventAdminRequest.getStateAction() != null) {
+        /*if (updateEventAdminRequest.getStateAction() != null) {
             if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.PUBLISH_EVENT)) {
                 if (event.getCreatedOn() != null) {
                     throw new UncorrectedParametersException("Событие уже опубликовано");
@@ -241,6 +240,19 @@ public class EventServiceImpl implements EventService {
                 if (event.getState().equals(EventState.PUBLISHED) || event.getPublishedOn() != null) {
                     throw new UncorrectedParametersException("Событие уже опубликовано");
                 }
+                event.setState(EventState.CANCELED);
+            }
+        }*/
+        if (updateEventAdminRequest.getStateAction() != null) {
+            if (!event.getState().equals(EventState.PENDING)) {
+                throw new UncorrectedParametersException("Событие уже отменено");
+            }
+            if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.PUBLISH_EVENT)) {
+                event.setState(EventState.PUBLISHED);
+                event.setPublishedOn(LocalDateTime.now());
+                //вот тут появляется дата публикации, нужно сюда запихнуть проверку на час от даты публикации
+            }
+            if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
                 event.setState(EventState.CANCELED);
             }
         }

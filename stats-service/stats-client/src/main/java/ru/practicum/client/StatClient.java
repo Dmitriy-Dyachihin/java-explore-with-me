@@ -67,7 +67,7 @@ public class StatClient {
         parameters.put("end", end.format(DateTimeFormatter.ofPattern(DATE)));
 
         if (uris != null && !uris.isEmpty()) {
-            parameters.put("uris", uris);
+            parameters.put("uris", uris.toArray());
             path.append("&uris={uris}");
         }
 

@@ -64,14 +64,14 @@ public class PublicEventController {
         return eventService.getEventById(id, request);
     }
 
-    private void addHit(HttpServletRequest httpServletRequest) {
+    private void addHit(HttpServletRequest request) {
         StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
 
         EndpointHitDto requestDto = new EndpointHitDto();
         requestDto.setTimestamp(LocalDateTime.now());
         requestDto.setUri("/events");
         requestDto.setApp("event-service");
-        requestDto.setIp(httpServletRequest.getRemoteAddr());
+        requestDto.setIp(request.getRemoteAddr());
         statClient.createEndpointHit(requestDto);
     }
 }

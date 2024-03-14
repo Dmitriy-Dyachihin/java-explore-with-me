@@ -50,7 +50,7 @@ public class RequestServiceImpl implements RequestService {
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует пользователя с указанным id"));
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
-                new UncorrectedParametersException("Не существует события с указанным id"));
+                new EntityNotFoundException("Не существует события с указанным id"));
         if (requestRepository.existsByRequesterAndEvent(userId, eventId)) {
             throw new UncorrectedParametersException("Событие уже создано");
         }
