@@ -20,7 +20,6 @@ import ru.practicum.ewm.services.EventService;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Min;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -37,7 +36,6 @@ public class PublicEventController {
     private String statServerUrl;
 
     @GetMapping
-    /*EventFullDto*/
     public List<EventShortDto> getEventsByUser(@RequestParam(name = "text", required = false) String text,
                                                @RequestParam(name = "categories", required = false) List<Long> categories,
                                                @RequestParam(name = "paid", required = false) Boolean paid,
@@ -45,8 +43,8 @@ public class PublicEventController {
                                                @RequestParam(name = "rangeEnd", required = false) String rangeEnd,
                                                @RequestParam(name = "onlyAvailable", required = false) boolean onlyAvailable,
                                                @RequestParam(name = "sort", required = false) SortBy sort,
-                                               @RequestParam(name = "from", /*required = false, */defaultValue = "0") @Min(0) Integer from,
-                                               @RequestParam(name = "size", /*required = false, */defaultValue = "10") @Min(1) Integer size,
+                                               @RequestParam(name = "from", defaultValue = "0") @Min(0) Integer from,
+                                               @RequestParam(name = "size", defaultValue = "10") @Min(1) Integer size,
                                                HttpServletRequest request) {
         addHit(request);
         return eventService.getEventsByUserWithParams(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,

@@ -7,8 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.StatClient;
-import ru.practicum.dto.EndpointHitDto;
-import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dtos.event.EventFullDto;
 import ru.practicum.ewm.dtos.event.EventShortDto;
 import ru.practicum.ewm.dtos.event.NewEventDto;
@@ -186,7 +184,6 @@ public class EventServiceImpl implements EventService {
         if (events.isEmpty()) {
             return new ArrayList<>();
         }
-        //setView(events);
         return eventMapper.convertToFull(events);
     }
 
@@ -322,8 +319,6 @@ public class EventServiceImpl implements EventService {
         if (events.size() == 0) {
             return new ArrayList<>();
         }
-        /*setView(events);
-        sendStat(events, request);*/
         return eventMapper.convert(events);
     }
 
@@ -335,60 +330,8 @@ public class EventServiceImpl implements EventService {
                 new EntityNotFoundException("Не существует события с указанным id"));
         List<Event> events = new ArrayList<>();
         events.add(event);
-        /*setView(events);
-        sendStat(events, request);*/
         return eventMapper.convert(event);
     }
-
-    /*private List<StatsDto> getStats(String start, String end, List<String> uris) {
-        return statClient.getStats(start, end, uris, false);
-    }
-
-    public void setView(List<Event> events) {
-        LocalDateTime start = events.get(0).getCreatedOn();
-        List<String> uris = new ArrayList<>();
-        Map<String, Event> eventUris = new HashMap<>();
-        String uri;
-        for (Event event : events) {
-            if (start.isBefore(event.getCreatedOn())) {
-                start = event.getCreatedOn();
-            }
-            uri = "/events/" + event.getId();
-            uris.add(uri);
-            eventUris.put(uri, event);
-            event.setViews(0L);
-        }
-        String startTime = start.format(DateTimeFormatter.ofPattern(datePattern));
-        String endTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern(datePattern));
-
-        List<StatsDto> stats = getStats(startTime, endTime, uris);
-        stats.forEach((stat) -> eventUris.get(stat.getUri()).setViews(stat.getHits()));
-    }
-
-    public void sendStat(List<Event> events, HttpServletRequest request) {
-        String remoteAddr = request.getRemoteAddr();
-        String nameService = "main-service";
-
-        EndpointHitDto requestDto = new EndpointHitDto();
-        requestDto.setTimestamp(LocalDateTime.parse(LocalDateTime.now().format(dateTimeFormatter)));
-        requestDto.setUri("/events");
-        requestDto.setApp(nameService);
-        requestDto.setIp(request.getRemoteAddr());
-        statClient.createEndpointHit(requestDto);
-        sendStatForEvents(events, remoteAddr, LocalDateTime.now(), nameService);
-    }
-
-    private void sendStatForEvents(List<Event> events, String remoteAddr, LocalDateTime now,
-                                   String nameService) {
-        for (Event event : events) {
-            EndpointHitDto requestDto = new EndpointHitDto();
-            requestDto.setTimestamp(LocalDateTime.parse(now.format(dateTimeFormatter)));
-            requestDto.setUri("/events/" + event.getId());
-            requestDto.setApp(nameService);
-            requestDto.setIp(remoteAddr);
-            statClient.createEndpointHit(requestDto);
-        }
-    }*/
 
     @Override
     @Transactional

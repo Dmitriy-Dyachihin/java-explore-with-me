@@ -77,8 +77,6 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public RequestDto cancelRequest(Long userId, Long requestId) {
         log.info("Отмена заявки на событие с id={} пользователем с id={}", requestId, userId);
-        /*User user = userRepository.findById(userId).orElseThrow(() ->
-                new EntityNotFoundException("Не существует пользователя с указанным id"));*/
         Request request = requestRepository.findByRequesterAndId(userId, requestId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует запроса с указанным id"));
         request.setStatus(RequestStatus.CANCELED);

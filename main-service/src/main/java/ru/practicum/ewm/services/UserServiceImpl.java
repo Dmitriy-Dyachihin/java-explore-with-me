@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dtos.user.UserDto;
 import ru.practicum.ewm.exceptions.EntityNotFoundException;
 import ru.practicum.ewm.exceptions.UncorrectedParametersException;
-import ru.practicum.ewm.exceptions.UncorrectedRequestException;
 import ru.practicum.ewm.mappers.UserMapper;
 import ru.practicum.ewm.models.User;
 import ru.practicum.ewm.repositories.UserRepository;

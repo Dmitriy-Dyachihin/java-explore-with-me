@@ -10,7 +10,6 @@ import ru.practicum.ewm.dtos.category.CategoryDto;
 import ru.practicum.ewm.dtos.category.NewCategoryDto;
 import ru.practicum.ewm.exceptions.EntityNotFoundException;
 import ru.practicum.ewm.exceptions.UncorrectedParametersException;
-import ru.practicum.ewm.exceptions.UncorrectedRequestException;
 import ru.practicum.ewm.mappers.CategoryMapper;
 import ru.practicum.ewm.models.Category;
 import ru.practicum.ewm.repositories.CategoryRepository;
@@ -47,7 +46,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category =  categoryRepository.findById(catId)
                 .orElseThrow(() -> new EntityNotFoundException("Не существует сущности с указанным id"));
         if (!category.getName().equals(categoryDto.getName())) {
-            if (/*categoryRepository.existsByName(categoryDto.getName())*/categoryRepository.findByNameIgnoreCase(categoryDto.getName()).isPresent()) {
+            if (categoryRepository.findByNameIgnoreCase(categoryDto.getName()).isPresent()) {
                 throw new UncorrectedParametersException("Категория с указанным именем уже существует");
             }
         }

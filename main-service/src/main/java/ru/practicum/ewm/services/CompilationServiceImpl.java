@@ -16,10 +16,8 @@ import ru.practicum.ewm.models.Event;
 import ru.practicum.ewm.repositories.CompilationRepository;
 import ru.practicum.ewm.repositories.EventRepository;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +28,6 @@ public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final CompilationMapper compilationMapper;
-    //private final EventService eventService;
 
     @Override
     public CompilationDto createCompilation(NewCompilationDto newCompilationDto) {
@@ -41,7 +38,6 @@ public class CompilationServiceImpl implements CompilationService {
         } else {
             compilation.setEvents(new HashSet<>());
         }
-        //compilation.setEvents(new HashSet<>(events));
         if (newCompilationDto.getPinned() != null) {
             compilation.setPinned(newCompilationDto.getPinned());
         } else {
@@ -70,7 +66,6 @@ public class CompilationServiceImpl implements CompilationService {
             compilation.setTitle(updateCompilationRequest.getTitle());
         }
         Compilation compilationToSave = compilationRepository.save(compilation);
-        //setView(compilationToSave);
         log.info("Обновлена подборка подборка: {}", compilationToSave);
         return compilationMapper.convert(compilationRepository.save(compilationToSave));
     }
@@ -104,11 +99,4 @@ public class CompilationServiceImpl implements CompilationService {
         return compilationMapper.convert(compilation);
     }
 
-    /*private void setView(Compilation compilation) {
-        Set<Event> setEvents = compilation.getEvents();
-        if (!setEvents.isEmpty()) {
-            List<Event> events = new ArrayList<>(setEvents);
-            eventService.setView(events);
-        }
-    }*/
 }

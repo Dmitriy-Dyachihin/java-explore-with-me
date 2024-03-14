@@ -1,9 +1,6 @@
 package ru.practicum.ewm.models;
 
-//import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,10 +12,8 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-//@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-//@Builder
 @Entity
 @Table(name = "events")
 public class Event {
@@ -30,11 +25,9 @@ public class Event {
     @JoinColumn(name = "category_id", referencedColumnName = "id")
     Category category;
     Long confirmedRequests;
-    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(name = "created_On")
     LocalDateTime createdOn;
     String description;
-    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime eventDate;
     @OneToOne
     @JoinColumn(name = "initiator_id", referencedColumnName = "id")
@@ -44,7 +37,6 @@ public class Event {
     Location location;
     Boolean paid;
     Long participantLimit;
-    //@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime publishedOn;
     Boolean requestModeration;
     @Enumerated(EnumType.STRING)
