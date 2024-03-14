@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 //@AllArgsConstructor
-@NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 //@Builder
 @Entity
 @Table(name = "events")
@@ -70,8 +70,16 @@ public class Event {
         this.id = id;
         this.initiator = initiator;
         this.location = location;
-        this.paid = paid;
-        this.participantLimit = participantLimit;
+        if (paid == null) {
+            this.paid = false;
+        } else {
+            this.paid = paid;
+        }
+        if (participantLimit == null) {
+            this.participantLimit = 0L;
+        } else {
+            this.participantLimit = participantLimit;
+        }
         this.publishedOn = publishedOn;
         if (requestModeration == null) {
             this.requestModeration = true;

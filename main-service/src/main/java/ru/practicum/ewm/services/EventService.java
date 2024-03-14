@@ -7,7 +7,7 @@ import ru.practicum.ewm.dtos.event.UpdateEventAdminRequest;
 import ru.practicum.ewm.dtos.event.UpdateEventUserRequest;
 import ru.practicum.ewm.enums.EventState;
 import ru.practicum.ewm.enums.SortBy;
-import ru.practicum.ewm.models.Event;
+//import ru.practicum.ewm.models.Event;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -33,5 +33,5 @@ public interface EventService {
 
     EventFullDto getEventById(Long id, HttpServletRequest request);
 
-    void setView(List<Event> events);
+    void setViews(Long id, Long count);
 }

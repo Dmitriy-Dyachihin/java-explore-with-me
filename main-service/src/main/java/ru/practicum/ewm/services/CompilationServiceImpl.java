@@ -30,14 +30,23 @@ public class CompilationServiceImpl implements CompilationService {
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final CompilationMapper compilationMapper;
-    private final EventService eventService;
+    //private final EventService eventService;
 
     @Override
     public CompilationDto createCompilation(NewCompilationDto newCompilationDto) {
-        List<Event> events = eventRepository.findAllByIdIn(newCompilationDto.getEvents());
         Compilation compilation = new Compilation();
-        compilation.setEvents(new HashSet<>(events));
-        compilation.setPinned(newCompilationDto.getPinned());
+        if (newCompilationDto.getEvents() != null) {
+            List<Event> events = eventRepository.findAllByIdIn(newCompilationDto.getEvents());
+            compilation.setEvents(new HashSet<>(events));
+        } else {
+            compilation.setEvents(new HashSet<>());
+        }
+        //compilation.setEvents(new HashSet<>(events));
+        if (newCompilationDto.getPinned() != null) {
+            compilation.setPinned(newCompilationDto.getPinned());
+        } else {
+            compilation.setPinned(false);
+        }
         compilation.setTitle(newCompilationDto.getTitle());
         Compilation compilationToSave = compilationRepository.save(compilation);
         log.info("Сохранена подборка: {}", compilationToSave);
@@ -46,10 +55,11 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public CompilationDto updateCompilation(Long compId, UpdateCompilationRequest updateCompilationRequest) {
+        log.info("Обновление подборки c id = {}, параметры: {}", compId, updateCompilationRequest);
         Compilation compilation = compilationRepository.findById(compId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует подборки с указанным id"));
         List<Long> ids = updateCompilationRequest.getEvents();
-        if (!ids.isEmpty()) {
+        if (ids != null && !ids.isEmpty()) {
             List<Event> events = eventRepository.findAllByIdIn(ids);
             compilation.setEvents(new HashSet<>(events));
         }
@@ -60,7 +70,7 @@ public class CompilationServiceImpl implements CompilationService {
             compilation.setTitle(updateCompilationRequest.getTitle());
         }
         Compilation compilationToSave = compilationRepository.save(compilation);
-        setView(compilationToSave);
+        //setView(compilationToSave);
         log.info("Обновлена подборка подборка: {}", compilationToSave);
         return compilationMapper.convert(compilationRepository.save(compilationToSave));
     }
@@ -94,11 +104,11 @@ public class CompilationServiceImpl implements CompilationService {
         return compilationMapper.convert(compilation);
     }
 
-    private void setView(Compilation compilation) {
+    /*private void setView(Compilation compilation) {
         Set<Event> setEvents = compilation.getEvents();
         if (!setEvents.isEmpty()) {
             List<Event> events = new ArrayList<>(setEvents);
             eventService.setView(events);
         }
-    }
+    }*/
 }

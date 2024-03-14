@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ToString
 public class UpdateEventUserRequest {
     @Size(min = 20, max = 2000)
     String annotation;

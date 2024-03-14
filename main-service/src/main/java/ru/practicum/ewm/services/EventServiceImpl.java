@@ -98,13 +98,14 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto updateEventByUser(Long userId, Long eventId, UpdateEventUserRequest updateEventUserRequest) {
         log.info("Обновление события с id={}, пользователем с id={}", eventId, userId);
+        log.info("Параметры: {}", updateEventUserRequest);
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId).orElseThrow(() ->
                 new EntityNotFoundException("События с указанным id не существует"));
         if (event.getState().equals(EventState.PUBLISHED)) {
             throw new UncorrectedParametersException("Изменить можно только отмененные события или события в состоянии ожидания модерации");//Еще по-другому можно проверить
         }
-        if (updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new UncorrectedParametersException("Ошибка времени создания события");
+        if (updateEventUserRequest.getEventDate() != null && updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new UncorrectedRequestException("Ошибка времени создания события");
         }
         if (updateEventUserRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventUserRequest.getAnnotation());
@@ -149,6 +150,8 @@ public class EventServiceImpl implements EventService {
     public List<EventFullDto> getEventsByAdmin(List<Long> users, List<EventState> states, List<Long> categoriesId,
                                                String rangeStart, String rangeEnd, Integer from, Integer size) {
         log.info("Получение списка событий с параметрами администратором");
+        log.info("Параметры: users {}, states {}, categoriesId {}, rangeStart {}, rangeEnd {}, from {}, size {}",
+                users, states, categoriesId, rangeStart, rangeEnd, from, size);
         LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, dateTimeFormatter) : null;
         LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, dateTimeFormatter) : null;
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
@@ -180,16 +183,17 @@ public class EventServiceImpl implements EventService {
                 .setFirstResult(from)
                 .setMaxResults(size)
                 .getResultList();
-        if (events.size() == 0) {
+        if (events.isEmpty()) {
             return new ArrayList<>();
         }
-        setView(events);
+        //setView(events);
         return eventMapper.convertToFull(events);
     }
 
     @Override
     public EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
         log.info("Обновление события с id={}", eventId);
+        log.info("Параметры: {} ", updateEventAdminRequest);
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
                 new EntityNotFoundException("События с указанным id не существует"));
 
@@ -204,11 +208,14 @@ public class EventServiceImpl implements EventService {
             event.setDescription(updateEventAdminRequest.getDescription());
         }
         if (updateEventAdminRequest.getEventDate() != null) {
-            LocalDateTime eventDate = updateEventAdminRequest.getEventDate();
-            if (eventDate.isBefore(LocalDateTime.now()) || eventDate.isBefore(event.getPublishedOn().plusHours(1))) {
-                throw new UncorrectedRequestException("Не существует категории с указанным id");
+            if (event.getPublishedOn() != null) {
+                LocalDateTime eventDate = updateEventAdminRequest.getEventDate();
+                if (eventDate.isBefore(LocalDateTime.now()) || eventDate.isBefore(event.getPublishedOn().plusHours(1))
+                        || eventDate.isEqual(LocalDateTime.now())) {
+                    throw new UncorrectedRequestException("Ошибка времени создания");
+                }
+                event.setEventDate(updateEventAdminRequest.getEventDate());
             }
-            event.setEventDate(updateEventAdminRequest.getEventDate());
         }
         if (updateEventAdminRequest.getLocation() != null) {
             event.setLocation(updateEventAdminRequest.getLocation());
@@ -255,6 +262,9 @@ public class EventServiceImpl implements EventService {
         log.info("Получение списка событий с параметрами пользователем");
         LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, dateTimeFormatter) : null;
         LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, dateTimeFormatter) : null;
+        if (start != null && end != null && start.isAfter(end)) {
+            throw new UncorrectedRequestException("Начало не может быть после конца");
+        }
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> query = criteriaBuilder.createQuery(Event.class);
         Root<Event> root = query.from(Event.class);
@@ -312,8 +322,8 @@ public class EventServiceImpl implements EventService {
         if (events.size() == 0) {
             return new ArrayList<>();
         }
-        setView(events);
-        sendStat(events, request);
+        /*setView(events);
+        sendStat(events, request);*/
         return eventMapper.convert(events);
     }
 
@@ -325,12 +335,12 @@ public class EventServiceImpl implements EventService {
                 new EntityNotFoundException("Не существует события с указанным id"));
         List<Event> events = new ArrayList<>();
         events.add(event);
-        setView(events);
-        sendStat(events, request);
+        /*setView(events);
+        sendStat(events, request);*/
         return eventMapper.convert(event);
     }
 
-    private List<StatsDto> getStats(String start, String end, List<String> uris) {
+    /*private List<StatsDto> getStats(String start, String end, List<String> uris) {
         return statClient.getStats(start, end, uris, false);
     }
 
@@ -378,5 +388,14 @@ public class EventServiceImpl implements EventService {
             requestDto.setIp(remoteAddr);
             statClient.createEndpointHit(requestDto);
         }
+    }*/
+
+    @Override
+    @Transactional
+    public void setViews(Long id, Long count) {
+        Event currentEvent = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Не найдено событие по id = " + id));
+        currentEvent.setViews(count);
+        eventRepository.save(currentEvent);
     }
 }

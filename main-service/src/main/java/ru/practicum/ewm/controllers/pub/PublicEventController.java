@@ -1,12 +1,17 @@
 package ru.practicum.ewm.controllers.pub;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.client.StatClient;
+import ru.practicum.dto.EndpointHitDto;
+import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dtos.event.EventFullDto;
 import ru.practicum.ewm.dtos.event.EventShortDto;
 import ru.practicum.ewm.enums.SortBy;
@@ -14,6 +19,8 @@ import ru.practicum.ewm.services.EventService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.Min;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -24,6 +31,11 @@ public class PublicEventController {
 
     private final EventService eventService;
 
+    private final RestTemplateBuilder restTemplateBuilder;
+
+    @Value("${stat-server.url}")
+    private String statServerUrl;
+
     @GetMapping
     /*EventFullDto*/
     public List<EventShortDto> getEventsByUser(@RequestParam(name = "text", required = false) String text,
@@ -33,15 +45,35 @@ public class PublicEventController {
                                                @RequestParam(name = "rangeEnd", required = false) String rangeEnd,
                                                @RequestParam(name = "onlyAvailable", required = false) boolean onlyAvailable,
                                                @RequestParam(name = "sort", required = false) SortBy sort,
-                                               @RequestParam(name = "from", required = false, defaultValue = "0") @Min(0) Integer from,
-                                               @RequestParam(name = "size", required = false, defaultValue = "10") @Min(1) Integer size,
+                                               @RequestParam(name = "from", /*required = false, */defaultValue = "0") @Min(0) Integer from,
+                                               @RequestParam(name = "size", /*required = false, */defaultValue = "10") @Min(1) Integer size,
                                                HttpServletRequest request) {
+        addHit(request);
         return eventService.getEventsByUserWithParams(text, categories, paid, rangeStart, rangeEnd, onlyAvailable,
                 sort, from, size, request);
     }
 
     @GetMapping("/{id}")
     public EventFullDto getEventById(@PathVariable Long id, HttpServletRequest request) {
-        return  eventService.getEventById(id, request);
+        addHit(request);
+        StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
+
+        List<StatsDto> stats = statClient.getStats(LocalDateTime.now().minusYears(5), LocalDateTime.now().plusYears(5),
+                List.of(request.getRequestURI()), true);
+
+        Long hits = stats.get(0).getHits();
+        eventService.setViews(id, hits);
+        return eventService.getEventById(id, request);
+    }
+
+    private void addHit(HttpServletRequest httpServletRequest) {
+        StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
+
+        EndpointHitDto requestDto = new EndpointHitDto();
+        requestDto.setTimestamp(LocalDateTime.now());
+        requestDto.setUri("/events");
+        requestDto.setApp("event-service");
+        requestDto.setIp(httpServletRequest.getRemoteAddr());
+        statClient.createEndpointHit(requestDto);
     }
 }

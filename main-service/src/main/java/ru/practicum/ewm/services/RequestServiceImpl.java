@@ -98,6 +98,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public EventRequestStatusUpdateResult updateRequest(Long userId, Long eventId, EventRequestStatusUpdateRequest request) {
         log.info("Изменение заявок события с id={}, пользователем с id={}", eventId, userId);
+        log.info("Параметры: {}", request);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует пользователя с указанным id"));
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
@@ -115,7 +116,7 @@ public class RequestServiceImpl implements RequestService {
             throw new UncorrectedParametersException("Заявка уже подтверждена");
         }
 
-        if (event.getConfirmedRequests() + requestToUpdate.size() > event.getParticipantLimit() &&
+        if (event.getConfirmedRequests() != null && event.getConfirmedRequests() + requestToUpdate.size() > event.getParticipantLimit() &&
                 request.getStatus().equals(RequestStatusToUpdate.CONFIRMED)) {
             throw new UncorrectedParametersException("Превышен лимит заявок");
         }

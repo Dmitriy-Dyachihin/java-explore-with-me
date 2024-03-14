@@ -11,6 +11,7 @@ import java.util.List;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ToString
 public class EventRequestStatusUpdateRequest {
 
     List<Long> requestIds;

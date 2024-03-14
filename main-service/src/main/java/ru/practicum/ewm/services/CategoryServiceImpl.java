@@ -46,8 +46,10 @@ public class CategoryServiceImpl implements CategoryService {
         log.info("Редактирование категории с id:{}", catId);
         Category category =  categoryRepository.findById(catId)
                 .orElseThrow(() -> new EntityNotFoundException("Не существует сущности с указанным id"));
-        if (/*categoryRepository.existsByName(categoryDto.getName())*/categoryRepository.findByNameIgnoreCase(categoryDto.getName()).isPresent()) {
-            throw new UncorrectedParametersException("Категория с указанным именем уже существует");
+        if (!category.getName().equals(categoryDto.getName())) {
+            if (/*categoryRepository.existsByName(categoryDto.getName())*/categoryRepository.findByNameIgnoreCase(categoryDto.getName()).isPresent()) {
+                throw new UncorrectedParametersException("Категория с указанным именем уже существует");
+            }
         }
         category.setName(categoryDto.getName());
         return categoryMapper.convert(categoryRepository.save(category));

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 import javax.persistence.Entity;
@@ -20,6 +21,7 @@ import javax.persistence.Table;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "locations")
+@ToString
 public class Location {
 
     @Id
