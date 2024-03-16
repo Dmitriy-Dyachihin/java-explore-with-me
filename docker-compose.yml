@@ -40,7 +40,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=ewm
       - SPRING_DATASOURCE_PASSWORD=ewm
       - STAT_SERVER_URL=http://stats-server:9090
-      - TZ=Europe/Moscow
+#      - TZ=Europe/Moscow
 
 
   ewm-db:
