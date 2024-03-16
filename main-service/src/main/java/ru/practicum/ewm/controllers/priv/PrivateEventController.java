@@ -2,6 +2,7 @@ package ru.practicum.ewm.controllers.priv;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,6 +26,8 @@ import ru.practicum.ewm.services.RequestService;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import java.util.List;
+
+import static ru.practicum.ewm.enums.RequestStatusToUpdate.CONFIRMED;
 
 @RestController
 @RequestMapping("/users/{userId}/events")
@@ -67,9 +70,16 @@ public class PrivateEventController {
     }
 
     @PatchMapping("/{eventId}/requests")
-    public EventRequestStatusUpdateResult updateRequest(@PathVariable Long userId,
-                                                        @PathVariable Long eventId,
-                                                        @Valid @RequestBody EventRequestStatusUpdateRequest request) {
-        return requestService.updateRequest(userId, eventId, request);
+    public ResponseEntity<EventRequestStatusUpdateResult> updateRequest(@PathVariable Long userId,
+                                                                        @PathVariable Long eventId,
+                                                                        @Valid @RequestBody EventRequestStatusUpdateRequest request) {
+
+        EventRequestStatusUpdateResult result = requestService.updateRequest(userId, eventId, request);
+
+        if (request.getStatus() == CONFIRMED && !result.getRejectedRequests().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+        }
     }
 }

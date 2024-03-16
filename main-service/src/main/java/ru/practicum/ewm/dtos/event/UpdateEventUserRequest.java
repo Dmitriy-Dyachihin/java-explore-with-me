@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ru.practicum.ewm.enums.StateActionForUser;
-import ru.practicum.ewm.models.Location;
 
 import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
@@ -24,7 +23,7 @@ public class UpdateEventUserRequest {
     String description;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime eventDate;
-    Location location;
+    LocationUpdateDto location;
     Boolean paid;
     @PositiveOrZero
     Long participantLimit;

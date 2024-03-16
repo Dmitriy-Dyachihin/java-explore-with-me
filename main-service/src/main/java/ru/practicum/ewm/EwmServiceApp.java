@@ -9,10 +9,4 @@ public class EwmServiceApp {
         SpringApplication.run(EwmServiceApp.class, args);
 
     }
-
-    /*@Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.build();
-
-    }*/
 }

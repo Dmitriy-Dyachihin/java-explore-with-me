@@ -21,6 +21,7 @@ import ru.practicum.ewm.repositories.RequestRepository;
 import ru.practicum.ewm.repositories.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,7 +90,7 @@ public class RequestServiceImpl implements RequestService {
         log.info("Получение списка заявок на событие с id={}, id владельца={}", eventId, userId);
         User user = userRepository.findById(userId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует пользователя с указанным id"));
-        List<Request> requests = requestRepository.findAllByEventWithInitiator(userId, eventId);
+        List<Request> requests = requestRepository.findAllByEventAndInitiator(userId, eventId);
         return requestMapper.convert(requests);
     }
 
@@ -101,36 +102,54 @@ public class RequestServiceImpl implements RequestService {
                 new EntityNotFoundException("Не существует пользователя с указанным id"));
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
                 new EntityNotFoundException("Не существует события с указанным id"));
+
         EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
-            return result;
-        }
-        List<Request> requests = requestRepository.findAllByEventWithInitiator(eventId, userId);
+
+        List<Request> requests = requestRepository.findAllByEventAndInitiator(userId, eventId);
         List<Request> requestToUpdate = requests.stream()
                 .filter(r -> request.getRequestIds().contains(r.getId()))
                 .collect(Collectors.toList());
-        if (requestToUpdate.stream().anyMatch(x -> x.getStatus().equals(RequestStatus.CONFIRMED) &&
-                request.getStatus().equals(RequestStatusToUpdate.REJECTED))) {
-            throw new UncorrectedParametersException("Заявка уже подтверждена");
+
+        List<Request> confirmedRequests = new ArrayList<>();
+        List<Request> rejectedRequests = new ArrayList<>();
+
+
+        if (request.getRequestIds() != null && !request.getRequestIds().isEmpty()) {
+            for (Request r : requestToUpdate) {
+                if (!r.getStatus().equals(RequestStatus.PENDING)) {
+                    throw new UncorrectedParametersException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+                }
+                if (request.getStatus().equals(RequestStatusToUpdate.REJECTED)) {
+                    rejectedRequests.add(r);
+                }
+                if (request.getStatus().equals(RequestStatusToUpdate.CONFIRMED)) {
+
+                    if (event.getConfirmedRequests() != null) {
+                        if (event.getParticipantLimit() >= event.getConfirmedRequests() + 1 ||
+                                event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
+                            confirmedRequests.add(r);
+                            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+                        } else {
+                            rejectedRequests.add(r);
+                        }
+                    } else {
+                        if (event.getParticipantLimit() >= 1 || event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
+                            confirmedRequests.add(r);
+                            event.setConfirmedRequests(1L);
+                        } else {
+                            rejectedRequests.add(r);
+                        }
+                    }
+                }
+            }
         }
 
-        if (event.getConfirmedRequests() != null && event.getConfirmedRequests() + requestToUpdate.size() > event.getParticipantLimit() &&
-                request.getStatus().equals(RequestStatusToUpdate.CONFIRMED)) {
-            throw new UncorrectedParametersException("Превышен лимит заявок");
-        }
-        for (Request r : requestToUpdate) {
-            r.setStatus(RequestStatus.valueOf(request.getStatus().toString()));
-        }
-        requestRepository.saveAll(requestToUpdate);
-        if (request.getStatus().equals(RequestStatusToUpdate.CONFIRMED)) {
-            event.setConfirmedRequests(event.getConfirmedRequests() + requestToUpdate.size());
-            eventRepository.save(event);
-            result.setConfirmedRequests(requestMapper.convert(requestToUpdate));
-        }
-        if (request.getStatus().equals(RequestStatusToUpdate.REJECTED)) {
-            result.setRejectedRequests(requestMapper.convert(requestToUpdate));
-        }
+        confirmedRequests.forEach(r -> r.setStatus(RequestStatus.CONFIRMED));
+        rejectedRequests.forEach(r -> r.setStatus(RequestStatus.REJECTED));
+        result.setRejectedRequests(requestMapper.convert(rejectedRequests));
+        result.setConfirmedRequests(requestMapper.convert(confirmedRequests));
 
         return result;
+
     }
 }

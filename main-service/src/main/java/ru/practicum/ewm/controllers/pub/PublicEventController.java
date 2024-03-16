@@ -56,11 +56,12 @@ public class PublicEventController {
         addHit(request);
         StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
 
-        List<StatsDto> stats = statClient.getStats(LocalDateTime.now().minusYears(5), LocalDateTime.now().plusYears(5),
+        List<StatsDto> stats = statClient.getStats(LocalDateTime.now().minusYears(6), LocalDateTime.now(),
                 List.of(request.getRequestURI()), true);
-
-        Long hits = stats.get(0).getHits();
-        eventService.setViews(id, hits);
+        if (!stats.isEmpty()) {
+            Long hits = stats.get(0).getHits();
+            eventService.setViews(id, hits);
+        }
         return eventService.getEventById(id, request);
     }
 
@@ -69,7 +70,7 @@ public class PublicEventController {
 
         EndpointHitDto requestDto = new EndpointHitDto();
         requestDto.setTimestamp(LocalDateTime.now());
-        requestDto.setUri("/events");
+        requestDto.setUri(request.getRequestURI());
         requestDto.setApp("event-service");
         requestDto.setIp(request.getRemoteAddr());
         statClient.createEndpointHit(requestDto);

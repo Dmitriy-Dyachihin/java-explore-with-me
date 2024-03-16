@@ -86,7 +86,7 @@ public class CompilationServiceImpl implements CompilationService {
         if (pinned != null && pinned) {
             return compilationMapper.convert(compilationRepository.findAllByPinned(pinned, page));
         }
-        return compilationMapper.convert(compilationRepository.findAll());
+        return compilationMapper.convert(compilationRepository.findAll(page).getContent());
     }
 
     @Transactional(readOnly = true)

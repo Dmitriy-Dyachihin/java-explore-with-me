@@ -6,7 +6,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.client.StatClient;
 import ru.practicum.ewm.dtos.event.EventFullDto;
 import ru.practicum.ewm.dtos.event.EventShortDto;
 import ru.practicum.ewm.dtos.event.NewEventDto;
@@ -20,6 +19,7 @@ import ru.practicum.ewm.exceptions.EntityNotFoundException;
 import ru.practicum.ewm.exceptions.UncorrectedParametersException;
 import ru.practicum.ewm.exceptions.UncorrectedRequestException;
 import ru.practicum.ewm.mappers.EventMapper;
+import ru.practicum.ewm.mappers.LocationMapper;
 import ru.practicum.ewm.models.Category;
 import ru.practicum.ewm.models.Event;
 import ru.practicum.ewm.models.User;
@@ -49,6 +49,7 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
     private final CategoryRepository categoryRepository;
     private final EntityManager entityManager;
+    private final LocationMapper locationMapper;
     private final String datePattern = "yyyy-MM-dd HH:mm:ss";
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(datePattern);
 
@@ -78,8 +79,6 @@ public class EventServiceImpl implements EventService {
         Event event = eventMapper.convert(newEventDto);
         event.setCategory(category);
         event.setInitiator(user);
-        event.setCreatedOn(LocalDateTime.now());
-        event.setState(EventState.PENDING);
         return eventMapper.convert(eventRepository.save(event));
     }
 
@@ -118,7 +117,7 @@ public class EventServiceImpl implements EventService {
             event.setEventDate(updateEventUserRequest.getEventDate());
         }
         if (updateEventUserRequest.getLocation() != null) {
-            event.setLocation(updateEventUserRequest.getLocation());
+            event.setLocation(locationMapper.convert(updateEventUserRequest.getLocation()));
         }
         if (updateEventUserRequest.getPaid() != null) {
             event.setPaid(updateEventUserRequest.getPaid());
@@ -193,6 +192,16 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId).orElseThrow(() ->
                 new EntityNotFoundException("События с указанным id не существует"));
 
+        if (event.getState() != null && event.getState().equals(EventState.PUBLISHED)) {
+            throw new UncorrectedParametersException("Изменить можно только отмененные события или события в состоянии ожидания модерации");
+        }
+
+        if (updateEventAdminRequest.getEventDate() != null) {
+            if (updateEventAdminRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2)) || updateEventAdminRequest.getEventDate().isBefore(LocalDateTime.now())) {
+                throw new UncorrectedRequestException("Дата и время на которые намечено событие не может быть раньше, чем через два часа от текущего момента");
+            }
+        }
+
         if (updateEventAdminRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventAdminRequest.getAnnotation());
         }
@@ -203,16 +212,11 @@ public class EventServiceImpl implements EventService {
         if (updateEventAdminRequest.getDescription() != null) {
             event.setDescription(updateEventAdminRequest.getDescription());
         }
+
         if (updateEventAdminRequest.getEventDate() != null) {
-            if (event.getPublishedOn() != null) {
-                LocalDateTime eventDate = updateEventAdminRequest.getEventDate();
-                if (eventDate.isBefore(LocalDateTime.now()) || eventDate.isBefore(event.getPublishedOn().plusHours(1))
-                        || eventDate.isEqual(LocalDateTime.now())) {
-                    throw new UncorrectedRequestException("Ошибка времени создания");
-                }
-                event.setEventDate(updateEventAdminRequest.getEventDate());
-            }
+            event.setEventDate(updateEventAdminRequest.getEventDate());
         }
+
         if (updateEventAdminRequest.getLocation() != null) {
             event.setLocation(updateEventAdminRequest.getLocation());
         }
@@ -225,24 +229,6 @@ public class EventServiceImpl implements EventService {
         if (updateEventAdminRequest.getRequestModeration() != null) {
             event.setRequestModeration(updateEventAdminRequest.getRequestModeration());
         }
-        /*if (updateEventAdminRequest.getStateAction() != null) {
-            if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.PUBLISH_EVENT)) {
-                if (event.getCreatedOn() != null) {
-                    throw new UncorrectedParametersException("Событие уже опубликовано");
-                }
-                if (event.getState().equals(EventState.CANCELED)) {
-                    throw new UncorrectedParametersException("Событие уже отменено");
-                }
-                event.setState(EventState.PUBLISHED);
-                event.setPublishedOn(LocalDateTime.now());
-            }
-            if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
-                if (event.getState().equals(EventState.PUBLISHED) || event.getPublishedOn() != null) {
-                    throw new UncorrectedParametersException("Событие уже опубликовано");
-                }
-                event.setState(EventState.CANCELED);
-            }
-        }*/
         if (updateEventAdminRequest.getStateAction() != null) {
             if (!event.getState().equals(EventState.PENDING)) {
                 throw new UncorrectedParametersException("Событие уже отменено");
@@ -250,7 +236,6 @@ public class EventServiceImpl implements EventService {
             if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.PUBLISH_EVENT)) {
                 event.setState(EventState.PUBLISHED);
                 event.setPublishedOn(LocalDateTime.now());
-                //вот тут появляется дата публикации, нужно сюда запихнуть проверку на час от даты публикации
             }
             if (updateEventAdminRequest.getStateAction().equals(StateActionForAdmin.REJECT_EVENT)) {
                 event.setState(EventState.CANCELED);
@@ -340,6 +325,9 @@ public class EventServiceImpl implements EventService {
         log.info("Получение события с id={}", id);
         Event event = eventRepository.findById(id).orElseThrow(() ->
                 new EntityNotFoundException("Не существует события с указанным id"));
+        if (event.getPublishedOn() == null || !event.getState().equals(EventState.PUBLISHED)) {
+            throw new EntityNotFoundException("Событие не опубликовано");
+        }
         List<Event> events = new ArrayList<>();
         events.add(event);
         return eventMapper.convert(event);

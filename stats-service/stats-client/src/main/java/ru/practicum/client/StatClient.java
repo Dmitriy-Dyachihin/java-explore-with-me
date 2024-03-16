@@ -82,7 +82,7 @@ public class StatClient {
             response = restTemplate.exchange(path.toString(), HttpMethod.GET, requestEntity,
                     new ParameterizedTypeReference<>() {}, parameters);
         } catch (HttpStatusCodeException e) {
-            throw new StatsException("Произошла ошибка при обращении к ", e);
+            throw new StatsException("Произошла ошибка при обращении к " + path, e);
         }
 
         return response.getBody();

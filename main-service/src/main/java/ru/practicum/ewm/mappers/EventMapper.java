@@ -14,7 +14,10 @@ public interface EventMapper {
 
     List<EventShortDto> convert(List<Event> events);
 
+    @Mapping(target = "confirmedRequests", constant = "0L")
     @Mapping(source = "category", target = "category.id")
+    @Mapping(source = "location.lat", target = "location.lat")
+    @Mapping(source = "location.lon", target = "location.lon")
     Event convert(NewEventDto newEventDto);
 
     EventFullDto convert(Event event);
