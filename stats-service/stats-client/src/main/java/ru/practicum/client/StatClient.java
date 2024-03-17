@@ -15,6 +15,8 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.StatsDto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +53,7 @@ public class StatClient {
         return response.getBody();
     }
 
-    public List<StatsDto> getStats(String start, String end, @Nullable List<String> uris, @Nullable Boolean unique) {
+    public List<StatsDto> getStats(LocalDateTime start, LocalDateTime end, @Nullable List<String> uris, @Nullable Boolean unique) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -61,11 +63,11 @@ public class StatClient {
         path.append("/stats?start={start}&end={end}");
         Map<String, Object> parameters = new HashMap<>();
 
-        parameters.put("start", start.format(DATE));
-        parameters.put("end", end.format(DATE));
+        parameters.put("start", start.format(DateTimeFormatter.ofPattern(DATE)));
+        parameters.put("end", end.format(DateTimeFormatter.ofPattern(DATE)));
 
         if (uris != null && !uris.isEmpty()) {
-            parameters.put("uris", uris);
+            parameters.put("uris", uris.toArray());
             path.append("&uris={uris}");
         }
 
@@ -80,7 +82,7 @@ public class StatClient {
             response = restTemplate.exchange(path.toString(), HttpMethod.GET, requestEntity,
                     new ParameterizedTypeReference<>() {}, parameters);
         } catch (HttpStatusCodeException e) {
-            throw new StatsException("Произошла ошибка при обращении к ", e);
+            throw new StatsException("Произошла ошибка при обращении к " + path, e);
         }
 
         return response.getBody();

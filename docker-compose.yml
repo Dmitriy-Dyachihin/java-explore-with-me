@@ -12,7 +12,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=stats
       - SPRING_DATASOURCE_PASSWORD=stats
       - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/stats
-      - TZ=Europe/Moscow
+  #      - TZ=Europe/Moscow
 
   stats-db:
     image: postgres:14-alpine
@@ -20,15 +20,38 @@ services:
       - /var/lib/postgresql/data/
     container_name: postgres-ewm-stats-db
     ports:
-      - "6541:5432"
+      - "6542:5432"
     environment:
       - POSTGRES_USER=stats
       - POSTGRES_PASSWORD=stats
       - POSTGRES_DB=stats
 
-#  ewm-service:
-#    ports:
-#      - "8080:8080"
+  ewm-service:
+    build: ./main-service
+    image: ewm-main-service
+    container_name: ewm-main-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ewm-db
+      - stats-server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm
+      - SPRING_DATASOURCE_USERNAME=ewm
+      - SPRING_DATASOURCE_PASSWORD=ewm
+      - STAT_SERVER_URL=http://stats-server:9090
+#      - TZ=Europe/Moscow
 
-#  ewm-db:
-#    image: postgres:14-alpine
+
+  ewm-db:
+    image: postgres:14-alpine
+    volumes:
+      - /var/lib/postgresql/data/
+    container_name: postgres-ewm-main-db
+    ports:
+      - "6541:5432"
+    environment:
+      - POSTGRES_USER=ewm
+      - POSTGRES_PASSWORD=ewm
+      - POSTGRES_DB=ewm
+
