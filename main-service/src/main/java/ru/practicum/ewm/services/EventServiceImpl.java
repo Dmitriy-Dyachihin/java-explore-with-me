@@ -2,10 +2,14 @@ package ru.practicum.ewm.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.client.StatClient;
+import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dtos.event.EventFullDto;
 import ru.practicum.ewm.dtos.event.EventShortDto;
 import ru.practicum.ewm.dtos.event.NewEventDto;
@@ -52,6 +56,10 @@ public class EventServiceImpl implements EventService {
     private final LocationMapper locationMapper;
     private final String datePattern = "yyyy-MM-dd HH:mm:ss";
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(datePattern);
+    private final RestTemplateBuilder restTemplateBuilder;
+
+    @Value("${stat-server.url}")
+    private String statServerUrl;
 
 
     @Transactional(readOnly = true)
@@ -79,7 +87,9 @@ public class EventServiceImpl implements EventService {
         Event event = eventMapper.convert(newEventDto);
         event.setCategory(category);
         event.setInitiator(user);
-        return eventMapper.convert(eventRepository.save(event));
+        Event eventToSave = eventRepository.save(event);
+        log.info("Создано событие с id={}", eventToSave.getId());
+        return eventMapper.convert(eventToSave);
     }
 
     @Transactional(readOnly = true)
@@ -330,6 +340,14 @@ public class EventServiceImpl implements EventService {
         }
         List<Event> events = new ArrayList<>();
         events.add(event);
+        StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
+
+        List<StatsDto> stats = statClient.getStats(LocalDateTime.now().minusYears(6), LocalDateTime.now(),
+                List.of(request.getRequestURI()), true);
+        if (!stats.isEmpty()) {
+            Long hits = stats.get(0).getHits();
+            setViews(id, hits);
+        }
         return eventMapper.convert(event);
     }
 

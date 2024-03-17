@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.client.StatClient;
 import ru.practicum.dto.EndpointHitDto;
-import ru.practicum.dto.StatsDto;
 import ru.practicum.ewm.dtos.event.EventFullDto;
 import ru.practicum.ewm.dtos.event.EventShortDto;
 import ru.practicum.ewm.enums.SortBy;
@@ -54,14 +53,6 @@ public class PublicEventController {
     @GetMapping("/{id}")
     public EventFullDto getEventById(@PathVariable Long id, HttpServletRequest request) {
         addHit(request);
-        StatClient statClient = new StatClient(statServerUrl, restTemplateBuilder);
-
-        List<StatsDto> stats = statClient.getStats(LocalDateTime.now().minusYears(6), LocalDateTime.now(),
-                List.of(request.getRequestURI()), true);
-        if (!stats.isEmpty()) {
-            Long hits = stats.get(0).getHits();
-            eventService.setViews(id, hits);
-        }
         return eventService.getEventById(id, request);
     }
 
