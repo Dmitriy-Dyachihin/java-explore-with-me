@@ -80,6 +80,7 @@ public class CommentServiceImpl implements CommentService {
         log.info("Комментарий с id={} был удален ", commentId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CommentDto getCommentByIdByUser(Long userId, Long commentId) {
         log.info("Получение комментария с id={}, пользоваетелем с id={}", commentId, userId);
@@ -93,6 +94,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.convert(comment);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CommentDto getCommentByIdByAdmin(Long commentId) {
         log.info("Получение комментария с id={} администратором", commentId);
@@ -101,6 +103,7 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.convert(comment);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<CommentDto> getCommentsByEventIdByAdmin(Long eventId, Integer from, Integer size) {
         log.info("Получение комментариев событием с if={} администратором", eventId);
